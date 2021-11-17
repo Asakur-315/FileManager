@@ -13,7 +13,7 @@ def checkAvailable(f):
     if os.path.isfile(pathFileString(f)) | os.path.isdir(pathFileString(f)):
         return 1
     else:
-        print("Файл/папка не существует или введено недопустимое имя")
+        return 0
 
 def checkAFolder(f):
     if os.path.isdir(f'{outPath}{f}'):
@@ -30,11 +30,16 @@ def getFullPath():
 class cmds():
 
     def help(): #help
-        print("Помощь")
+        print(sett.helpString)
 
     def ap(fname): # add folder
         fname = fname[3:]
-        os.mkdir(pathFileString(fname))
+        try:
+            os.mkdir(pathFileString(fname))
+        except FileExistsError:
+            print("Папка с таким именем уже существует")   
+        except OSError:
+            print("Недопустимое имя папки") 
 
     def dp(fname): #delete folder
         fname = fname[3:]
@@ -54,21 +59,27 @@ class cmds():
             return 1
         elif (fname == '/'):
             inPath.clear()
+            inPath.append('')
         else:
             if checkAvailable(fname):
                 inPath.append(fname)
+            else:
+                print("Нет папки с таким именем")
 
     def af(fname): #add file
         fname = fname[3:]
         if checkAvailable(fname):
+            if (fname == ""):
+                print("Введите название")
+                return 0
             print ("Файл с таким именем уже существует")
-        else:
-            try:
-                with open (pathFileString(fname), 'w+') as file:
-                    print(f'Файл {fname} создан.')
-                file.close()
-            except:
-                print('Недопустимое имя файла')
+            return 0
+        try:
+            with open (pathFileString(fname), 'w+') as file:
+                print(f'Файл {fname} создан.')
+            file.close()
+        except:
+            print('Недопустимое имя файла')
     
     def wf(fname): #write to file
         fname = fname[3:]
@@ -79,6 +90,8 @@ class cmds():
                     file.write(text)
             except:
                 print('Недопустимое имя файла')
+        else:
+            print("Нет файла с таким именем")
 
     def rf(fname): #read file
         fname = fname[3:]
@@ -99,39 +112,67 @@ class cmds():
         if checkAvailable(fname):
             try:
                 os.remove(pathFileString(fname))
+                print(f"Файл {fname} удалён.")
             except:
                 print('Недопустимое имя файла')
+        else:
+            print("Файла с таким именем не существует")
+            
 
     def copyf(fname):
         fname = fname[6:]
         if checkAvailable(fname):
+            basepath = inPath
+            if (fname == ""):
+                print("Введите название файла в виде \ncopyf <название>")
+                return 0
             try:
                 pathto = input("Введите папку назначения (введите '--' для отмены)\n/")
                 if pathto == '--' : return 0
-                if checkAvailable(pathto):
-                    try:
-                        shutil.copyfile(pathFileString(fname), f'{outPath}/{pathto}/{fname}')
-                    except:
-                        print('Недопустимый путь')
+                try:
+                    shutil.copyfile( f'{outPath}/{getFullPath()}/{fname}', f'{outPath}/{pathto}/{fname}')
+                    print(f"Файл {fname} скопирован в {pathto}")
+                except:
+                    print('Недопустимый путь')
             except:
                 print('Недопустимое имя файла')
+
     def renf(fname):
         fname = fname[5:]
         if checkAvailable(fname):
+            if (fname == ""):
+                print("Введите название файла в виде \nrenf <название>")
+                return 0
             try:
                 newfname = input(f"Введите новое имя файла (введите '--' для отмены)\n{fname} > ")
                 if newfname == '--' : return 0
                 try:
                     os.rename(pathFileString(fname),pathFileString(newfname))
+                    print(f"Файл {fname} переименован в {newfname}")
                 except FileExistsError:
                     print("Файл с таким именем уже существует")
             except:
                 print('Недопустимое имя файла')
+
+    def dir():
+        files = []
+        folders = []
+        for (dirpath, dirnames, filenames) in os.walk(pathFileString("")):
+            files.extend(filenames)
+            folders.extend(dirnames)
+            break
+        print('-Папки------')
+        for el in folders:
+            print(f'{el}')
+        print('-Файлы------')
+        for el in files:
+            print(f'{el}')
         
 
 
 def processInput(str):
     if (str == 'help'): cmds.help()
+    if (str == 'dir'): cmds.dir()
     if (str[:2] == 'ap'): cmds.ap(str)
     if (str[:2] == 'dp'): cmds.dp(str)
     if (str[:2] == 'cp'): cmds.cp(str)
@@ -143,7 +184,8 @@ def processInput(str):
     if (str[:4] == 'renf'): cmds.renf(str)
 
 
+
 while 1:
-    cmd = input()
+    cmd = input(f'>{getFullPath()}')
     result = processInput(cmd)
 
