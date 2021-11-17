@@ -1,0 +1,1 @@
+workPath = 'C:/Users/Asakur/Desktop/code/Python/FileManagerWorkingPath/'
